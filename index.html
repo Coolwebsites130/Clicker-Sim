@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clicker Empire 2X Mode</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    #rage-bar {
+      width: 30px;
+      height: 100vh;
+      background: #222;
+      position: relative;
+    }
+
+    #rage-fill {
+      width: 100%;
+      background: limegreen;
+      position: absolute;
+      bottom: 0;
+      height: 0%;
+      transition: height 0.1s ease;
+    }
+
+    #sidebar {
+      width: 270px;
+      padding: 10px;
+      border-right: 2px solid #333;
+    }
+
+    #main {
+      flex: 1;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+    }
+
+    button {
+      background-color: #0f0;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: 0.2s;
+      width: 90%;
+    }
+
+    button:hover {
+      background-color: #0c0;
+    }
+
+    #gift {
+      position: absolute;
+      top: 100px;
+      left: -200px;
+      padding: 15px 30px;
+      background: gold;
+      color: black;
+      border-radius: 12px;
+      font-weight: bold;
+      display: none;
+      animation: slide 12s linear forwards;
+    }
+
+    @keyframes slide {
+      0% { left: -200px; top: 100px; }
+      100% { left: 100vw; top: 150px; }
+    }
+
+    #bonusText {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 40px;
+      font-weight: bold;
+      color: #0ff;
+      opacity: 0;
+      pointer-events: none;
+      animation: none;
+    }
+
+    @keyframes fallAndFade {
+      0% { top: 20px; opacity: 1; }
+      100% { top: 100px; opacity: 0; }
+    }
+
+    h1 {
+      color: #0f0;
+    }
+  </style>
+</head>
+<body>
+  <div id="rage-bar"><div id="rage-fill"></div></div>
+
+  <div id="sidebar">
+    <h3>Click Upgrades</h3>
+    <button onclick="buyUpgrade('upg1', 20, 10)" id="upg1">+10 Clicks (20)</button>
+    <button onclick="buyUpgrade('upg2', 50, 25)" id="upg2">+25 Clicks (50)</button>
+    <button onclick="buyUpgrade('upg3', 100, 50)" id="upg3">+50 Clicks (100)</button>
+
+    <h3>Passive Income</h3>
+    <button onclick="buyAutoUpgrade('factory', 500, 1)" id="factory">🏭 Factory (500)</button>
+    <button onclick="buyAutoUpgrade('store', 1500, 5)" id="store">🏬 Store (1500)</button>
+    <button onclick="buyAutoUpgrade('office', 5000, 15)" id="office">🏢 Office (5000)</button>
+    <button onclick="buyAutoUpgrade('bank', 15000, 50)" id="bank">🏦 Bank (15000)</button>
+    <button onclick="buyAutoUpgrade('ufo', 50000, 200)" id="ufo">🛸 UFO Clickers (50000)</button>
+  </div>
+
+  <div id="main">
+    <h1>Clicks: <span id="clicks">0</span></h1>
+    <button onclick="addClick()">CLICK ME</button>
+    <button id="gift" onclick="collectGift()">🎁 Gift!</button>
+    <div id="bonusText">2X!!!</div>
+  </div>
+
+  <script>
+    let clicks = parseInt(localStorage.getItem("clicks")) || 0;
+    let baseClickValue = parseInt(localStorage.getItem("clickValue")) || 1;
+    let upgrades = JSON.parse(localStorage.getItem("upgrades")) || { upg1: 0, upg2: 0, upg3: 0 };
+    let autoUpgrades = JSON.parse(localStorage.getItem("autoUpgrades")) || {
+      factory: 0, store: 0, office: 0, bank: 0, ufo: 0
+    };
+    let rage = 0;
+    let giftVisible = false;
+
+    function getClickValue() {
+      return rage >= 100 ? baseClickValue * 2 : baseClickValue;
+    }
+
+    function addClick() {
+      clicks += getClickValue();
+      rage = Math.min(100, rage + 4);
+      updateRageBar();
+      if (rage === 100) showBonusText();
+      saveProgress();
+      updateDisplay();
+    }
+
+    function showBonusText() {
+      const bonus = document.getElementById("bonusText");
+      bonus.style.animation = "fallAndFade 1s ease-out";
+      bonus.style.opacity = 1;
+      setTimeout(() => {
+        bonus.style.animation = "none";
+        bonus.style.opacity = 0;
+      }, 1000);
+    }
+
+    function buyUpgrade(id, cost, value) {
+      if (clicks >= cost) {
+        clicks -= cost;
+        baseClickValue += value;
+        upgrades[id] = (upgrades[id] || 0) + 1;
+        saveProgress();
+        updateDisplay();
+      }
+    }
+
+    function buyAutoUpgrade(id, cost, rate) {
+      if (clicks >= cost) {
+        clicks -= cost;
+        autoUpgrades[id] = (autoUpgrades[id] || 0) + 1;
+        saveProgress();
+        updateDisplay();
+      }
+    }
+
+    function generateAutoClicks() {
+      let total = 0;
+      total += autoUpgrades.factory * 1;
+      total += autoUpgrades.store * 5;
+      total += autoUpgrades.office * 15;
+      total += autoUpgrades.bank * 50;
+      total += autoUpgrades.ufo * 200;
+      if (total > 0) {
+        clicks += total;
+        saveProgress();
+        updateDisplay();
+      }
+    }
+
+    function updateDisplay() {
+      document.getElementById("clicks").innerText = clicks;
+      document.getElementById("upg1").innerText = `+10 Clicks (20) [x${upgrades.upg1}]`;
+      document.getElementById("upg2").innerText = `+25 Clicks (50) [x${upgrades.upg2}]`;
+      document.getElementById("upg3").innerText = `+50 Clicks (100) [x${upgrades.upg3}]`;
+      document.getElementById("factory").innerText = `🏭 Factory (500) [x${autoUpgrades.factory}]`;
+      document.getElementById("store").innerText = `🏬 Store (1500) [x${autoUpgrades.store}]`;
+      document.getElementById("office").innerText = `🏢 Office (5000) [x${autoUpgrades.office}]`;
+      document.getElementById("bank").innerText = `🏦 Bank (15000) [x${autoUpgrades.bank}]`;
+      document.getElementById("ufo").innerText = `🛸 UFO (50000) [x${autoUpgrades.ufo}]`;
+    }
+
+    function updateRageBar() {
+      document.getElementById("rage-fill").style.height = rage + "%";
+    }
+
+    function drainRageBar() {
+      setInterval(() => {
+        if (rage > 0) {
+          rage -= 1;
+          updateRageBar();
+        }
+      }, 100);
+    }
+
+    function saveProgress() {
+      localStorage.setItem("clicks", clicks);
+      localStorage.setItem("clickValue", baseClickValue);
+      localStorage.setItem("upgrades", JSON.stringify(upgrades));
+      localStorage.setItem("autoUpgrades", JSON.stringify(autoUpgrades));
+    }
+
+    function spawnGift() {
+      if (giftVisible) return;
+      if (Math.random() <= 0.15) {
+        document.getElementById("gift").style.display = "block";
+        giftVisible = true;
+        setTimeout(() => {
+          document.getElementById("gift").style.display = "none";
+          giftVisible = false;
+        }, 12000);
+      }
+    }
+
+    function collectGift() {
+      const bonus = Math.floor(Math.random() * 20) + 10;
+      clicks += bonus;
+      document.getElementById("gift").style.display = "none";
+      giftVisible = false;
+      saveProgress();
+      updateDisplay();
+    }
+
+    setInterval(spawnGift, 5000);
+    setInterval(generateAutoClicks, 1000);
+    drainRageBar();
+    updateDisplay();
+    updateRageBar();
+  </script>
+</body>
+</html>
