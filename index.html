@@ -1,17 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Clicker Empire 2X Mode</title>
+  <meta charset="UTF-8" />
+  <title>Clicker Sim</title>
   <style>
     body {
+      margin: 0;
       background-color: #111;
       color: white;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
       display: flex;
       overflow-x: hidden;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background-color: #1f1f1f;
+      color: #0f0;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 1000;
+      box-shadow: 0 2px 4px #000;
+    }
+
+    header img {
+      height: 40px;
+      margin-right: 15px;
     }
 
     #rage-bar {
@@ -19,6 +38,7 @@
       height: 100vh;
       background: #222;
       position: relative;
+      margin-top: 60px;
     }
 
     #rage-fill {
@@ -31,9 +51,10 @@
     }
 
     #sidebar {
-      width: 270px;
+      width: 280px;
       padding: 10px;
       border-right: 2px solid #333;
+      margin-top: 60px;
     }
 
     #main {
@@ -41,6 +62,7 @@
       text-align: center;
       padding: 20px;
       position: relative;
+      margin-top: 60px;
     }
 
     button {
@@ -103,6 +125,11 @@
   </style>
 </head>
 <body>
+  <header>
+    <img src="https://via.placeholder.com/40" alt="Logo" />
+    <h2>Clicker Sim</h2>
+  </header>
+
   <div id="rage-bar"><div id="rage-fill"></div></div>
 
   <div id="sidebar">
@@ -116,7 +143,11 @@
     <button onclick="buyAutoUpgrade('store', 1500, 5)" id="store">🏬 Store (1500)</button>
     <button onclick="buyAutoUpgrade('office', 5000, 15)" id="office">🏢 Office (5000)</button>
     <button onclick="buyAutoUpgrade('bank', 15000, 50)" id="bank">🏦 Bank (15000)</button>
-    <button onclick="buyAutoUpgrade('ufo', 50000, 200)" id="ufo">🛸 UFO Clickers (50000)</button>
+    <button onclick="buyAutoUpgrade('ufo', 50000, 200)" id="ufo">🛸 UFO (50000)</button>
+    <button onclick="buyAutoUpgrade('construction', 200000, 500)" id="construction">🏗️ Construction Site (200k)</button>
+    <button onclick="buyAutoUpgrade('volcano', 750000, 2500)" id="volcano">🌋 Volcano Drill (750k)</button>
+    <button onclick="buyAutoUpgrade('aibot', 2500000, 10000)" id="aibot">🧠 AI Bot Farm (2.5M)</button>
+    <button onclick="buyAutoUpgrade('blackhole', 10000000, 50000)" id="blackhole">💥 Black Hole Extractor (10M)</button>
   </div>
 
   <div id="main">
@@ -131,7 +162,7 @@
     let baseClickValue = parseInt(localStorage.getItem("clickValue")) || 1;
     let upgrades = JSON.parse(localStorage.getItem("upgrades")) || { upg1: 0, upg2: 0, upg3: 0 };
     let autoUpgrades = JSON.parse(localStorage.getItem("autoUpgrades")) || {
-      factory: 0, store: 0, office: 0, bank: 0, ufo: 0
+      factory: 0, store: 0, office: 0, bank: 0, ufo: 0, construction: 0, volcano: 0, aibot: 0, blackhole: 0
     };
     let rage = 0;
     let giftVisible = false;
@@ -180,11 +211,13 @@
 
     function generateAutoClicks() {
       let total = 0;
-      total += autoUpgrades.factory * 1;
-      total += autoUpgrades.store * 5;
-      total += autoUpgrades.office * 15;
-      total += autoUpgrades.bank * 50;
-      total += autoUpgrades.ufo * 200;
+      for (const key in autoUpgrades) {
+        let rate = {
+          factory: 1, store: 5, office: 15, bank: 50,
+          ufo: 200, construction: 500, volcano: 2500, aibot: 10000, blackhole: 50000
+        }[key];
+        total += autoUpgrades[key] * rate;
+      }
       if (total > 0) {
         clicks += total;
         saveProgress();
@@ -197,11 +230,19 @@
       document.getElementById("upg1").innerText = `+10 Clicks (20) [x${upgrades.upg1}]`;
       document.getElementById("upg2").innerText = `+25 Clicks (50) [x${upgrades.upg2}]`;
       document.getElementById("upg3").innerText = `+50 Clicks (100) [x${upgrades.upg3}]`;
-      document.getElementById("factory").innerText = `🏭 Factory (500) [x${autoUpgrades.factory}]`;
-      document.getElementById("store").innerText = `🏬 Store (1500) [x${autoUpgrades.store}]`;
-      document.getElementById("office").innerText = `🏢 Office (5000) [x${autoUpgrades.office}]`;
-      document.getElementById("bank").innerText = `🏦 Bank (15000) [x${autoUpgrades.bank}]`;
-      document.getElementById("ufo").innerText = `🛸 UFO (50000) [x${autoUpgrades.ufo}]`;
+      for (const key in autoUpgrades) {
+        const names = {
+          factory: "🏭 Factory", store: "🏬 Store", office: "🏢 Office",
+          bank: "🏦 Bank", ufo: "🛸 UFO", construction: "🏗️ Construction Site",
+          volcano: "🌋 Volcano Drill", aibot: "🧠 AI Bot Farm", blackhole: "💥 Black Hole Extractor"
+        };
+        const costs = {
+          factory: 500, store: 1500, office: 5000, bank: 15000,
+          ufo: 50000, construction: 200000, volcano: 750000, aibot: 2500000, blackhole: 10000000
+        };
+        const el = document.getElementById(key);
+        if (el) el.innerText = `${names[key]} (${costs[key].toLocaleString()}) [x${autoUpgrades[key]}]`;
+      }
     }
 
     function updateRageBar() {
